@@ -1,0 +1,31 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: data-lake
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  volumeName: data-lake
+  storageClassName: gp2-retain
+  selector:
+    matchLabels:
+      pipeline: training
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: model-store
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  volumeName: model-store
+  storageClassName: gp2-retain
+  selector:
+    matchLabels:
+      pipeline: inference

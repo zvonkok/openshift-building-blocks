@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: caffe-18.09-py2-
+spec: 
+  template:
+    metadata:
+      name: caffe
+    spec:
+      priorityClassName: gpu-low-priority
+      containers:
+      - args:
+        - "-c"
+        - "/usr/local/bin/nvidia_entrypoint.sh; cd /data-lake/caffe/mnist; caffe train --solver=lenet_solver.prototxt --gpu=0; nvidia-smi"
+        command:
+        - "/bin/bash"
+        image: nvcr.io/nvidia/caffe:18.09-py3
+        name: ngc
+        resources:
+          limits:
+            nvidia.com/gpu: '1'
+        volumeMounts:
+        - mountPath: "/data-lake"
+          name: data-lake
+        - mountPath: "/dev/shm"
+          name: dshm
+      restartPolicy: Never
+      volumes:
+      - name: data-lake
+        persistentVolumeClaim:
+          claimName: nfs
+      - empytDir:
+          medium: Memory
+        name: dshm

@@ -1,0 +1,47 @@
+---
+- name: Add user zvonkok to htpasswd file
+  htpasswd:
+    path: /tmp/htpasswd
+    name: zvonkok
+    password: zvonkok
+    crypt_scheme: bcrypt
+
+- name: Add user tushar to htpasswd file
+  htpasswd:
+    path: /tmp/htpasswd
+    name: tushark
+    password: tushark
+    crypt_scheme: bcrypt
+
+- name: Add user ty to htpasswd file
+  htpasswd:
+    path: /tmp/htpasswd
+    name: tym
+    password: tym
+    crypt_scheme: bcrypt
+
+
+
+- name: Create htpasswd base64 encoding
+  shell: cat /tmp/htpasswd | base64
+  register: htpasswd_base64
+
+
+- name: Create htpasswd secret
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata: 
+        name: htpass-secret
+        namespace: openshift-config
+      type: Opaque
+      data:
+        htpasswd: "{{ htpasswd_base64.stdout }}"
+
+
+- name: Create htpasswd auth provider
+  k8s:
+    state: present
+    src: "{{ role_path }}/files/oauth.yaml"

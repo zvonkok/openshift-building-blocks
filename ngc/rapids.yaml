@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: Template
+labels:
+  template: rapids-template
+message: "The following RAPIDS pod has been created: ${NGC_IMAGE}.\n\n"
+metadata:
+  annotations:
+    description: Template for RAPIDS
+    iconClass: icon-shadowman
+    openshift.io/display-name: RAPIDS
+    openshift.io/documentation-url: https://ngc.nvidia.com/registry
+    tags: NVIDIA,machine-learning
+  name: rapids
+objects:
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: rapids
+  spec:
+    selector:
+      app: rapids
+    ports:
+    - name: http
+      protocol: TCP
+      port: 8888
+      targetPort: 8888
+    - name: prometheus
+      port: 8787
+      targetPort: 8787
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: rapids
+  spec:
+    host: ''
+    to:
+      name: rapids
+    port:
+      targetPort: 8888
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: rapids
+    labels:
+      app: rapids
+  spec:
+    restartPolicy: OnFailure
+    imagePUllPolicy: Always
+    containers:
+    - capabilities: {}
+      name: rapids
+      image: quay.io/zvonkok/rapids-demo:v2
+      env: 
+      ports:
+      - containerPort: 8888
+        name: http
+      - containerPort: 8787
+        name: prometheus
+      volumeMounts:
+      - mountPath: "/dev/shm"
+        name: dshm
+      resources:
+        limits:
+          nvidia.com/gpu: "${NUM_GPUS}"
+    volumes:
+    - name: dshm
+      empytDir:
+        medium: Memory
+parameters:
+- description: How many GPUs to use
+  displayName: Number of GPUs
+  name: NUM_GPUS
+  value: '1'
+

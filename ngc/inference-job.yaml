@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: inference-client-
+spec: 
+  template:
+    metadata:
+      name: inference
+    spec:
+      containers:
+      - image:  quay.io/zvonkok/inference_server_clients
+        command:
+        - "/bin/bash"
+        args:
+        - "-c"
+        - "sleep inf"
+        #- "/workspace/build/perf_client -m resnet50_netdef -p3000 -t4 -v -u $TENSORRTSERVER_SERVICE_PORT_8001_TCP_ADDR:8000"
+        #- "/workspace/build/image_client  -i grpc -u $TENSORRTSERVER_SERVICE_PORT_8001_TCP_ADDR:8001 -m resnet50_netdef -s INCEPTION  /ngc/tensorrtserver/examples/data/mug.jpg"
+        
+        name: ngc
+        resources:
+          limits:
+            nvidia.com/gpu: '1'
+        volumeMounts:
+        - mountPath: "/model-store"
+          name: model-store
+        - mountPath: "/dev/shm"
+          name: dshm
+      restartPolicy: Never
+      volumes:
+      - name: model-store
+        persistentVolumeClaim:
+          claimName: nfs-model-store
+      - empytDir:
+          medium: Memory
+        name: dshm

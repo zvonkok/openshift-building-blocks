@@ -1,0 +1,140 @@
+{
+  "apiVersion": "v1",
+  "kind": "Template",
+  "labels": {
+    "template": "ngc-inferenceserver-template"
+  },
+  "message": "The following NGC-TensorRT Inference Server pod has been created: ${NGC_IMAGE}.\n\n",
+  "metadata": {
+    "annotations": {
+      "description": "Template for NGC-Inference Server",
+      "iconClass": "icon-shadowman",
+      "openshift.io/display-name": "NGC Inference Server",
+      "openshift.io/documentation-url": "https://ngc.nvidia.com/registry",
+      "tags": "NVIDIA,machine-learning"
+    },
+    "name": "ngc-inferenceserver"
+  },
+  "objects": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+	"name": "inferenceserver-service"
+      },
+      "spec": {
+	"selector": {
+	  "app": "inferenceserver"
+	},
+	"ports": [
+	  {
+            "name": "http",
+            "protocol": "TCP",
+            "port": 8000,
+            "targetPort": 8000
+	  },
+	  {
+            "name": "grpc",
+            "port": 8001,
+            "targetPort": 8001
+	  },
+	  {
+            "name": "prometheus",
+            "port": 8002,
+            "targetPort": 8002
+	  }
+	],
+	"sessionAffinity": "None",
+        "type": "ClusterIP"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+	"name": "inferenceserver-18-09-py3",
+	"labels": {
+	  "app": "inferenceserver"
+	}
+      },
+      "spec": {
+	"restartPolicy": "OnFailure",
+	"containers": [
+	  {
+	    "capabilities": {},
+            "name": "ngc",
+            "image": "nvcr.io/nvidia/inferenceserver:18.09-py3",
+	    "command": ["/bin/bash"],
+	    "args": ["-c", "/opt/inference_server/bin/inference_server --model-store=/ngc/tensorrtserver/examples/models"],
+            "env": null,
+	    "ports": [
+	      {
+		"containerPort": 8000,
+		"name": "http"
+	      },
+	      {
+		"containerPort": 8001,
+		"name": "grpc"
+	      },
+	      {
+		"containerPort": 8002,
+		"name": "prometheus"
+	      }
+	    ],
+            "volumeMounts": [
+              {
+		"mountPath": "/dev/shm",
+		"name": "dshm"
+              },
+	      {
+		"mountPath": "/ngc",
+		"name": "ngc"
+	      }
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": { },
+	      "privileged": false,
+              "seLinuxOptions": {
+		"type": "nvidia_container_t"
+              }
+            },
+            "resources": {
+                "limits": {
+                    "nvidia.com/gpu": "${NUM_GPUS}"
+                }
+            }
+          }
+	],
+	"volumes": [
+	  {
+            "name": "dshm",
+            "empytDir": {
+              "medium": "Memory"
+            }
+	  },
+	  {
+	    "name": "ngc",
+	    "hostPath": {
+	      "path": "/ngc"
+	    }
+	  }
+	]
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "description": "Volume of Model Store",
+      "displayName": "Volume of Model Store",
+      "name": "MODEL_STORE",
+      "value": "/ngc"
+    },
+    {
+      "description": "How many GPUs to use",
+      "displayName": "Number of GPUs",
+      "name": "NUM_GPUS",
+      "value": "1"
+    }
+  ]
+}

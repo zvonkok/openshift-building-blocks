@@ -1,0 +1,22 @@
+	
+		{
+			"apiVersion": "rbac.authorization.k8s.io/v1",
+			"kind": "RoleBinding",
+			"metadata": {
+				"name": "rapids"
+			},
+			"roleRef": {
+				"apiGroup": "rbac.authorization.k8s.io",
+				"kind": "Role",
+				"name": "rapids"
+			},
+			"subjects": [
+				{
+					"kind": "ServiceAccount",
+					"name": "rapids"
+				}
+			],
+			"userNames": [
+				"rapids"
+			]
+		}

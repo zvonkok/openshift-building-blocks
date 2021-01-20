@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: training-job-infinite-
+spec: 
+  template:
+    metadata:
+      name: training
+    spec:
+      containers:
+      - args:
+        - "-c"
+        - "sleep inf"
+        command:
+        - "/bin/bash"
+        image: registry.access.redhat.com/ubi8/ubi-minimal
+        name: ngc
+        resources:
+          limits:
+            nvidia.com/gpu: '1'
+      restartPolicy: Never

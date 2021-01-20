@@ -1,0 +1,105 @@
+{
+  "apiVersion": "v1",
+  "kind": "Template",
+  "labels": {
+    "template": "rapids-demo-template"
+  },
+  "message": "The following RAPIDS pod has been created: ${NGC_IMAGE}.\n\n",
+  "metadata": {
+    "annotations": {
+      "description": "Template for RAPIDS demo",
+      "iconClass": "icon-shadowman",
+      "openshift.io/display-name": "RAPIDS demo",
+      "openshift.io/documentation-url": "https://ngc.nvidia.com/registry",
+      "tags": "NVIDIA,machine-learning"
+    },
+    "name": "rapids-demo"
+  },
+  "objects": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "rapids-service"
+      },
+      "spec": {
+        "selector": {
+          "app": "rapids"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "protocol": "TCP",
+            "port": 8888,
+            "targetPort": 8888
+          },
+          {
+            "name": "prometheus",
+            "port": 8787,
+            "targetPort": 8787
+          }
+        ],
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rapids-demo",
+        "labels": {
+          "app": "rapids"
+        }
+      },
+      "spec": {
+        "restartPolicy": "OnFailure",
+        "containers": [
+          {
+            "capabilities": {},
+            "name": "ngc",
+            "image": "quay.io/zvonkok/rapids-demo:v0",
+            "env": null,
+            "ports": [
+              {
+                "containerPort": 8888,
+                "name": "http"
+              },
+              {
+                "containerPort": 8787,
+                "name": "prometheus"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "mountPath": "/dev/shm",
+                "name": "dshm"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "nvidia.com/gpu": "${NUM_GPUS}"
+              }
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "dshm",
+            "empytDir": {
+              "medium": "Memory"
+            }
+          },
+        ]
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "description": "How many GPUs to use",
+      "displayName": "Number of GPUs",
+      "name": "NUM_GPUS",
+      "value": "1"
+    }
+  ]
+}

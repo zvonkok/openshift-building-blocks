@@ -1,0 +1,37 @@
+apiVersion: "autoscaling.openshift.io/v1"
+kind: "ClusterAutoscaler"
+metadata:
+  name: "default"
+spec:
+  podPriorityThreshold: 900000
+  resourceLimits:
+    maxNodesTotal: 24 
+    cores:
+      min: 2
+      max: 128 
+    memory:
+      min: 2 
+      max: 256 
+    gpus:
+      - type: nvidia.com/gpu 
+        min: 8
+        max: 16 
+  scaleDown: 
+    enabled: false 
+    delayAfterAdd: 10m 
+    delayAfterDelete: 5m 
+    delayAfterFailure: 30s 
+    unneededTime: 60s 
+---
+apiVersion: "autoscaling.openshift.io/v1beta1"
+kind: "MachineAutoscaler"
+metadata:
+  name: "gpu-us-west-2a" 
+  namespace: "openshift-machine-api"
+spec:
+  minReplicas: 1 
+  maxReplicas: 12 
+  scaleTargetRef: 
+    apiVersion: machine.openshift.io/v1beta1
+    kind: MachineSet 
+    name: zkaiser-aramco-588tb-gpu-us-west-2a

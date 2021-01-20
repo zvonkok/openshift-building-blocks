@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: inference-client-perf-
+spec: 
+  template:
+    metadata:
+      name: inference
+    spec:
+      containers:
+      - image:  quay.io/zvonkok/inference_server_clients
+        command:
+        - "/bin/bash"
+        args:
+        - "-c"
+        - "/workspace/build/perf_client -m resnet50_netdef -p3000 -t4 -v -u $TENSORRTSERVER_SERVICE_PORT_8001_TCP_ADDR:8000"
+        
+        name: ngc
+        volumeMounts:
+        - mountPath: "/model-store"
+          name: model-store
+        - mountPath: "/dev/shm"
+          name: dshm
+      restartPolicy: Never
+      volumes:
+      - name: model-store
+        persistentVolumeClaim:
+          claimName: nfs-model-store
+      - empytDir:
+          medium: Memory
+        name: dshm

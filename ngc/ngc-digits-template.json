@@ -1,0 +1,112 @@
+{
+  "apiVersion": "v1",
+  "kind": "Template",
+  "labels": {
+    "template": "ngc-digits-template"
+  },
+  "message": "The following NGC-digits Server pod has been created: ${NGC_IMAGE}.\n\n",
+  "metadata": {
+    "annotations": {
+      "description": "Template for NGC-digits Server",
+      "iconClass": "icon-shadowman",
+      "openshift.io/display-name": "NGC DIGITS",
+      "openshift.io/documentation-url": "https://ngc.nvidia.com/registry",
+      "tags": "NVIDIA,machine-learning"
+    },
+    "name": "ngc-digits"
+  },
+  "objects": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+	"name": "digits-service"
+      },
+      "spec": {
+	"selector": {
+	  "app": "digits"
+	},
+	"ports": [
+	  {
+            "name": "http",
+            "protocol": "TCP",
+            "port": 5000, 
+            "targetPort": 5000
+	  }
+	],
+	"sessionAffinity": "None",
+        "type": "ClusterIP"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+	"name": "digits-18-09",
+	"labels": {
+	  "app": "digits"
+	}
+      },
+      "spec": {
+	"restartPolicy": "OnFailure",
+	"containers": [
+	  {
+	    "capabilities": {},
+            "name": "ngc",
+            "image": "nvcr.io/nvidia/digits:18.09",
+            "env": null,
+	    "ports": [
+	      {
+		"containerPort": 5000,
+		"name": "http"
+	      }
+	    ],
+            "volumeMounts": [
+              {
+		"mountPath": "/dev/shm",
+		"name": "dshm"
+              },
+	      {
+		"mountPath": "/ngc",
+		"name": "ngc"
+	      }
+            ],
+            "resources": {
+                "limits": {
+                    "nvidia.com/gpu": "${NUM_GPUS}"
+                }
+            }
+          }
+	],
+	"volumes": [
+	  {
+            "name": "dshm",
+            "empytDir": {
+              "medium": "Memory"
+            }
+	  },
+	  {
+	    "name": "ngc",
+	    "hostPath": {
+	      "path": "/data/zvonkok/ngc"
+	    }
+	  }
+	]
+      }
+    }
+  ],
+  "parameters": [
+      {
+          "description": "Volume of Model Store",
+          "displayName": "Volume of Model Store",
+          "name": "MODEL_STORE",
+          "value": "/ngc"
+      },
+      {
+      "description": "How many GPUs to use",
+      "displayName": "Number of GPUs",
+      "name": "NUM_GPUS",
+      "value": "1"
+    }
+  ]
+}

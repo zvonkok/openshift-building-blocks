@@ -1,0 +1,183 @@
+{
+  "apiVersion": "v1",
+  "kind": "Template",
+  "labels": {
+    "template": "ngc-tensorrtserver-template"
+  },
+  "message": "The following NGC-TensorRT Inference Server pod has been created: ${NGC_IMAGE}.\n\n",
+  "metadata": {
+    "annotations": {
+      "description": "Template for NGC-TensorRT Inference Server",
+      "iconClass": "icon-shadowman",
+      "openshift.io/display-name": "NGC TensorRT Inference Server",
+      "openshift.io/documentation-url": "https://ngc.nvidia.com/registry",
+      "tags": "NVIDIA,machine-learning"
+    },
+    "name": "ngc-tensorrtserver"
+  },
+  "objects": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "tensorrtserver-service"
+      },
+      "spec": {
+        "selector": {
+          "app": "tensorrtserver"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "protocol": "TCP",
+            "port": 8000,
+            "targetPort": 8000
+          },
+          {
+            "name": "grpc",
+            "port": 8001,
+            "targetPort": 8001
+          },
+          {
+            "name": "prometheus",
+            "port": 8002,
+            "targetPort": 8002
+          }
+        ],
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      }
+    },
+    {
+      "apiVersion": "route.openshift.io/v1",
+      "kind": "Route",
+      "metadata": {
+        "name": "tensorrtserver-http"
+      },
+      "spec": {
+        "host": "",
+        "to": {
+          "name": "tensorrtserver-service"
+        },
+        "port": {
+          "targetPort": 8000
+        }
+      }
+    },
+    {
+      "apiVersion": "route.openshift.io/v1",
+      "kind": "Route",
+      "metadata": {
+        "name": "tensorrtserver-grpc"
+      },
+      "spec": {
+        "host": "",
+        "to": {
+          "name": "tensorrtserver-service"
+        },
+        "port": {
+          "targetPort": 8001
+        }
+      }
+    },
+    {
+      "apiVersion": "extensions/v1beta1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "tensorrtserver-18-09-py3"
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "tensorrtserver"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "tensorrtserver"
+            }
+          },
+          "spec": {
+            "tolerations": [
+              {
+                "key": "pipeline",
+                "operator": "Equal",
+                "value": "inference",
+                "effect": "NoExecute"
+              }
+            ],
+            "containers": [
+              {
+                "capabilities": {
+                },
+                "name": "ngc",
+                "image": "nvcr.io/nvidia/tensorrtserver:18.09-py3",
+                "command": [
+                  "/bin/bash"
+                ],
+                "args": [
+                  "-c",
+                  "/opt/tensorrtserver/bin/trtserver --model-store=/model-store/tensorrtserver/examples/models"
+                ],
+                "env": null,
+                "ports": [
+                  {
+                    "containerPort": 8000,
+                    "name": "http"
+                  },
+                  {
+                    "containerPort": 8001,
+                    "name": "grpc"
+                  },
+                  {
+                    "containerPort": 8002,
+                    "name": "prometheus"
+                  }
+                ],
+                "volumeMounts": [
+                  {
+                    "mountPath": "/model-store",
+                    "name": "model-store"
+                  },
+                  {
+                    "mountPath": "/dev/shm",
+                    "name": "dshm"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "nvidia.com/gpu": "${NUM_GPUS}"
+                  }
+                }
+              }
+            ],
+            "volumes": [
+              {
+                "name": "model-store",
+                "persistentVolumeClaim": {
+                  "claimName": "nfs-model-store"
+                }
+              },
+              {
+                "name": "dshm",
+                "empytDir": {
+                  "medium": "Memory"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "description": "How many GPUs to use",
+      "displayName": "Number of GPUs",
+      "name": "NUM_GPUS",
+      "value": "1"
+    }
+  ]
+}
